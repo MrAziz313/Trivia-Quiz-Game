@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia Quiz Game</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+     * {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+.container {
+    width: 80%;
+    max-width: 500px;
+    text-align: center;
+}
+
+#question-container {
+    margin: 20px 0;
+}
+
+h1 {
+    color: #333;
+}
+
+.options button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #eee;
+    transition: background-color 0.3s;
+}
+
+.options button:hover {
+    background-color: #ccc;
+}
+
+.correct {
+    background-color: #8bc34a;
+    color: #fff;
+}
+
+.incorrect {
+    background-color: #e57373;
+    color: #fff;
+}
+
+#next-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+#score {
+    font-size: 1.2em;
+    margin-top: 20px;
+    color: #333;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Trivia Quiz Game</h1>
+        <div id="question-container">
+            <h2 id="question"></h2>
+            <div id="options" class="options"></div>
+            <button id="next-btn" disabled>Next Question</button>
+        </div>
+        <h3 id="score">Score: 0</h3>
+    </div>
+    <script>
+        const questionContainer = document.getElementById('question-container');
+const questionElement = document.getElementById('question');
+const optionsContainer = document.getElementById('options');
+const nextButton = document.getElementById('next-btn');
+const scoreElement = document.getElementById('score');
+
+let currentQuestionIndex = 0;
+let score = 0;
+let questions = [];
+
+// Fetch questions from Open Trivia Database
+async function fetchQuestions() {
+    const response = await fetch('https://opentdb.com/api.php?amount=10&category=9&type=multiple');
+    const data = await response.json();
+    questions = data.results;
+    displayQuestion();
+}
+
+function displayQuestion() {
+    // Clear previous question
+    optionsContainer.innerHTML = '';
+    nextButton.disabled = true;
+
+    // Get current question and answers
+    const question = questions[currentQuestionIndex];
+    questionElement.innerHTML = decodeHTML(question.question);
+
+    // Combine and shuffle correct and incorrect answers
+    const answers = [...question.incorrect_answers, question.correct_answer].sort(() => Math.random() - 0.5);
+
+    // Create buttons for each answer
+    answers.forEach(answer => {
+        const button = document.createElement('button');
+        button.innerHTML = decodeHTML(answer);
+        button.addEventListener('click', () => selectAnswer(button, question.correct_answer));
+        optionsContainer.appendChild(button);
+    });
+}
+
+function selectAnswer(selectedButton, correctAnswer) {
+    // Disable all options after selection
+    Array.from(optionsContainer.children).forEach(button => button.disabled = true);
+    nextButton.disabled = false;
+
+    if (selectedButton.innerHTML === decodeHTML(correctAnswer)) {
+        selectedButton.classList.add('correct');
+        score++;
+        scoreElement.innerText = `Score: ${score}`;
+    } else {
+        selectedButton.classList.add('incorrect');
+    }
+}
+
+function nextQuestion() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < questions.length) {
+        displayQuestion();
+    } else {
+        showFinalScore();
+    }
+}
+
+function showFinalScore() {
+    questionElement.innerHTML = `Game Over! Your final score is ${score} / ${questions.length}`;
+    optionsContainer.innerHTML = '';
+    nextButton.style.display = 'none';
+}
+
+// Decode HTML entities in the question text
+function decodeHTML(html) {
+    const txt = document.createElement('textarea');
+    txt.innerHTML = html;
+    return txt.value;
+}
+
+// Start the game by fetching questions
+fetchQuestions();
+nextButton.addEventListener('click', nextQuestion);
+
+    </script>
+</body>
+</html>
